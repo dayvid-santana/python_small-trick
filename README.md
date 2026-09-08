@@ -27,6 +27,9 @@ Pequenas ferramentas e truques usando python
     <li>
         <a href="#instaFollwers">Listando seguidores do instagram</a>
     </li>
+    <li>
+        <a href="#dataclas">dataclass</a>
+    </li>
 </ul>
 
 
@@ -198,3 +201,105 @@ print(str(followees._data['count']))
 # Informação de seguidores
 print(str(followees._data['edges']))
 ````
+
+## Dataclass <div name="dataclass">Dataclass</div>
+@dataclass é um decorator do Python, disponível no módulo dataclasses.
+
+Ele serve para evitar escrever manualmente código repetitivo em classes cujo objetivo principal é armazenar dados.
+
+Sem @dataclass, algo equivalente seria aproximadamente:
+
+````py
+class ContextoSessao:
+    def __init__(self, cabecalhos, cookies):
+        self.cabecalhos = cabecalhos
+        self.cookies = cookies
+````
+
+Com:
+````py
+@dataclass
+class ContextoSessao:
+    cabecalhos: Mapping[str, str]
+    cookies: Mapping[str, str]
+
+o Python gera automaticamente métodos como __init__, __eq__ e outros.
+
+````
+
+### frozen=true
+
+Aqui:
+
+@dataclass(frozen=True, repr=False)
+
+o parâmetro:
+
+frozen=True
+
+faz com que a instância seja imutável em relação aos seus atributos depois de criada.
+
+Por exemplo:
+
+````py
+contexto = ContextoSessao()
+
+contexto.cabecalhos = {"Authorization": "abc"}
+
+````
+vai gerar algo semelhante a:
+
+FrozenInstanceError: cannot assign to field 'cabecalhos'
+
+Ou seja, depois que:
+
+contexto = ContextoSessao(...)
+
+for criado, você não poderá fazer:
+
+````py
+contexto.cookies = ...
+contexto.cabecalhos = ...
+````
+
+Isso é bastante interessante para objetos que representam estado de contexto e que não deveriam ser alterados acidentalmente.
+
+Mas existe uma sutileza importante aqui.
+
+frozen=True não significa necessariamente que os objetos dentro dos atributos são imutáveis.
+
+````py
+Por exemplo:
+
+contexto = ContextoSessao(
+    cabecalhos={"Authorization": "abc"}
+)
+````
+Embora você não possa fazer:
+
+contexto.cabecalhos = {}
+
+o objeto passado pode continuar sendo um dict.
+
+Então isso pode funcionar:
+
+contexto.cabecalhos["Authorization"] = "xyz"
+
+porque você não está substituindo o atributo cabecalhos; está modificando o objeto que ele referencia.
+
+Portanto:
+````
+frozen=True
+      │
+      ▼
+não permite trocar o atributo
+
+contexto.cabecalhos = outro_dict
+        ❌
+````
+
+mas isso não garante:
+
+imutabilidade profunda
+
+Se o objetivo for realmente impedir alterações dos headers e cookies, seria necessário usar estruturas imutáveis ou alguma outra estratégia.
